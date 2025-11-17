@@ -43,21 +43,29 @@ class TransactionServiceTest {
         TransactionRequest request = new TransactionRequest(1L, 1L, BigDecimal.valueOf(100));
 
         when(accountRepository.findById(1L)).thenReturn(Optional.of(new Account()));
+
         when(operationTypeRepository.findById(1L)).thenReturn(Optional.of(new OperationType()));
 
-        Transaction transaction = new Transaction();
-        transaction.setTransactionId(10L);
-        transaction.setAccountId(1L);
-        transaction.setOperationTypeId(1L);
-        transaction.setAmount(BigDecimal.valueOf(-100));
-        transaction.setEventDate(LocalDateTime.now());
+        when(transactionRepository.getAccountBalance(1L)).thenReturn(BigDecimal.ZERO);
 
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
+        Transaction savedTransaction = new Transaction();
+        savedTransaction.setTransactionId(10L);
+        savedTransaction.setAccountId(1L);
+        savedTransaction.setOperationTypeId(1L);
+        savedTransaction.setAmount(BigDecimal.valueOf(-100));
+        savedTransaction.setEventDate(LocalDateTime.now());
+
+        when(transactionRepository.save(any(Transaction.class))).thenReturn(savedTransaction);
 
         TransactionResponse response = transactionService.createTransaction(request);
 
-        assertThat(response.amount()).isEqualTo(BigDecimal.valueOf(-100));
+        assertThat(response.transaction_id()).isEqualTo(10L);
         assertThat(response.account_id()).isEqualTo(1L);
+        assertThat(response.operation_type_id()).isEqualTo(1L);
+        assertThat(response.amount()).isEqualTo(BigDecimal.valueOf(-100));
+
+        verify(transactionRepository, times(1)).getAccountBalance(1L);
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
 
     @Test
